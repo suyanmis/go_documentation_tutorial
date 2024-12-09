@@ -30,6 +30,30 @@ func main() {
 		log.Fatal(pingErr)
 	}
 	fmt.Println("Connected!")
+
+	albums, err := albumsByArtist("John Coltrane")
+	if err != nil {
+		log.Fatal(err)
+	}
+	log.Println(albums)
+
+	album, err := albumById(2)
+	if err != nil {
+		log.Fatal(err)
+	}
+	log.Println(album)
+
+	newAlbum := Album{
+		Title:  "Highway to Hell",
+		Artist: "AC/DC",
+		Price:  259.99,
+	}
+	id, err := addAlbum(newAlbum)
+	if err != nil {
+		log.Fatalf("addAlbum error: %v", err)
+	}
+	log.Printf("Last id: %d\n", id)
+
 }
 
 type Album struct {
@@ -59,4 +83,29 @@ func albumsByArtist(name string) ([]Album, error) {
 		return nil, fmt.Errorf("albumsByArtist %q: %v", name, err)
 	}
 	return albums, nil
+}
+
+func albumById(id int64) (Album, error) {
+	var album Album
+	row := db.QueryRow("SELECT * FROM album WHERE id=?", id)
+	// order is important while scanning.
+	if err := row.Scan(&album.ID, &album.Title, &album.Artist, &album.Price); err != nil {
+		if err == sql.ErrNoRows {
+			return album, fmt.Errorf("invalid id: %d", id)
+		}
+		return album, fmt.Errorf("error while fetching album by id: %d", id)
+	}
+	return album, nil
+}
+
+func addAlbum(album Album) (int64, error) {
+	res, err := db.Exec("INSERT INTO album(title, artist, price) VALUES (?,?,?)", album.Title, album.Artist, album.Price)
+	if err != nil {
+		return 0, fmt.Errorf("addAlbum: %v", err)
+	}
+	id, err := res.LastInsertId()
+	if err != nil {
+		return 0, fmt.Errorf("addAlbum %v", err)
+	}
+	return id, nil
 }
