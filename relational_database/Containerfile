@@ -1,0 +1,14 @@
+FROM mysql:latest
+
+
+COPY ddl.sql /docker-entrypoint-initdb.d/
+
+ENV MYSQL_ROOT_PASSWORD="root" 
+ENV MYSQL_DATABASE="recordings" 
+ENV MYSQL_USER="test"
+ENV MYSQL_PASSWORD="test"
+
+VOLUME govolume
+
+EXPOSE 3306
+
